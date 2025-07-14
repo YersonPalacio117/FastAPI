@@ -1,17 +1,24 @@
 from pydantic import BaseModel
 from sqlmodel import SQLModel, Field
+from typing import Optional
 
 class CustomerBase(SQLModel):
-    name: str = Field(default=None)
-    description: str | None = Field(default=None)
-    email: str = Field(default=None)
-    age: int = Field(default=None)
+    name: str
+    description: Optional[str] = None
+    email: str
+    age: int
 
 class CustomerCreate(CustomerBase):
     pass
 
-class Customer(CustomerBase, table = True):
-    id: int | None = Field(default=None, primary_key=True)
+class Customer(CustomerBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+class CustomerUpdate(SQLModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    email: Optional[str] = None
+    age: Optional[int] = None
 
 class Transaction(BaseModel):
     id: int
