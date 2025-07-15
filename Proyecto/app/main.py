@@ -1,12 +1,13 @@
 import zoneinfo
 from fastapi import FastAPI
 from datetime import datetime
-from models import Transaction, Invoice
 from bd import create_all_tables
-from .router import customers
+from .router import customers, transactions, invoices
 
 app = FastAPI(lifespan=create_all_tables)
 app.include_router(customers.router)
+app.include_router(transactions.router)
+app.include_router(invoices.router)
 
 
 @app.get("/")
@@ -29,13 +30,4 @@ async def time(iso_code: str):
     tz = zoneinfo.ZoneInfo(timezone_str)
     return {"time" : datetime.now(tz)}
 
-
-@app.post("/transaction")
-async def create_transaction(transaction_data: Transaction):
-    return transaction_data
-
-
-@app.post("/invoices")
-async def create_invoices(invoice_data: Invoice):
-    return invoice_data
 
