@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from sqlmodel import SQLModel, Field, Relationship
+from pydantic import BaseModel, EmailStr, field_validator
+from sqlmodel import SQLModel, Field, Relationship, Session, select
 from typing import Optional
 from enum import Enum
+from bd import engine
 
 class Status(str, Enum):
     ACTIVE = "active"
@@ -23,8 +24,17 @@ class Plan(SQLModel, table=True):
 class CustomerBase(SQLModel):
     name: str
     description: Optional[str] = None
-    email: str
+    email: EmailStr
     age: int
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, value):
+        session = Session(engine)
+        customer = session.exec(select(Customer).where(Customer.email == value)).first()
+        if customer:
+            raise ValueError("El email ya existe")
+        return value
 
 class CustomerCreate(CustomerBase):
     pass
