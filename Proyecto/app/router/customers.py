@@ -1,6 +1,6 @@
-from models import Customer, CustomerCreate, CustomerUpdate, Plan, CustomerPlan
+from models import Customer, CustomerCreate, CustomerUpdate, Plan, CustomerPlan, Status
 from bd import SessionDep
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, HTTPException, Query
 from sqlmodel import select
 
 
@@ -53,14 +53,17 @@ async def list_customer(session: SessionDep):
 
 
 @router.post("/customers/{customer_id}/plans/{plan_id}", tags=['customers'])
-async def suscribe_customer_plan(customer_id: int, plan_id: int, session: SessionDep):
+async def suscribe_customer_plan(
+    customer_id: int, plan_id: int, session: SessionDep, 
+    plan_status: Status = Query()
+    ):
     customer_bd = session.get(Customer, customer_id)
     if not customer_bd:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El cliente no existe")
     plan_bd = session.get(Plan, plan_id)
     if not plan_bd:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El plan no existe")
-    customer_plan_bd = CustomerPlan(customer_id=customer_bd.id, plan_id=plan_bd.id)
+    customer_plan_bd = CustomerPlan(customer_id=customer_bd.id, plan_id=plan_bd.id, status=plan_status)
     session.add(customer_plan_bd)
     session.commit()
     session.refresh(customer_plan_bd)
@@ -68,9 +71,16 @@ async def suscribe_customer_plan(customer_id: int, plan_id: int, session: Sessio
 
 
 @router.get("/customers/{customer_id}/plans", tags=['customers'])
-async def list_customer_plans(customer_id: int, session: SessionDep):
+async def list_customer_plans(customer_id: int, session: SessionDep, plan_status: Status = Query()):
     customer_bd = session.get(Customer, customer_id)
     if not customer_bd:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El cliente no existe")
-    return customer_bd.plans
+    
+    query = (
+        select(CustomerPlan)
+        .where(CustomerPlan.customer_id == customer_id)
+        .where(CustomerPlan.status == plan_status)
+    )
+    customer_plans = session.exec(query).all()
+    return customer_plans
 
